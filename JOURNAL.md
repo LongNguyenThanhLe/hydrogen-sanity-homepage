@@ -1,69 +1,136 @@
-**Engineering Journal - Hydrogen + Sanity Home Page**
-A running log of decisions, dead-ends, and rationale as I build this project. Newest entries at the top of each stage. I keep this because why I made a choice matters as much as the choice itself.
+# Engineering Journal — Hydrogen + Sanity Home Page
 
-**The Assignment**
-Build a dynamic, editor-friendly Home Page experience(Plus one other page my choice) using Sanity as the content source and Shopify Hydrogen as the consumer. Everything run locally - no hosting, no paid services.
+> A running log of decisions, dead-ends, and rationale as I build this project. Newest entries at the top of each stage. I keep this because _why_ I made a choice matters as much as the choice itself.
+
+---
+
+## The Assignment
+
+Build a dynamic, editor-friendly Home Page experience (plus one other page, my choice) using Sanity as the content source and Shopify Hydrogen as the consumer. Everything runs locally — no hosting, no paid services.
+
 Things I want to demonstrate by the review:
 
-- Sanity as content source -> Hydrogen as consumer, end to end
-- A real editing experience(log into Sanity, edit, see it reflected in Hydrogen)
+- Sanity as content source → Hydrogen as consumer, end to end
+- A real editing experience (log into Sanity, edit, see it reflected in Hydrogen)
 - Clean handling of dev env, secrets, and toolchain
-- Portable text rendered through my own React components
-- Sensible decision, each with a stated reason
+- Portable Text rendered through my own React components
+- Sensible decisions, each with a stated reason
 
-**Where I'm starting from**
+---
 
-- Familiar: Typecript, React, and modern JS day-to-day. Backend work in Rust and Node. Comfortable with REST/GraphQL-style data fetching, Docker, adn Git-based workflows.
-- New to me: Shopify Hydrogen and Sanity specifically. So part of this exercise is genuinely "How do I ramp on an unfamiliar stack fast" - which is the real job. I'll lean on the React/TS transfer where I can and journal the parts that suprise me.
-- Environment: Node v22.13.1, macOS. Public repo on my personal Github.
+## Where I'm Starting From
 
-**Plan/Stages**
+- **Familiar:** TypeScript, React, and modern JS day-to-day. Backend work in Rust and Node. Comfortable with REST/GraphQL-style data fetching, Docker, and Git-based workflows.
+- **New to me:** Shopify Hydrogen and Sanity specifically. So part of this exercise is genuinely "how do I ramp on an unfamiliar stack fast" — which is the real job. I'll lean on the React/TS transfer where I can and journal the parts that surprise me.
+- **Environment:** Node v22.13.1, macOS. Public repo on my personal GitHub.
+
+---
+
+## Plan / Stages
+
 A rough build order. Expect this to change — I'll note it when it does.
 
-Stage 0 — Foundation. Repo, Node check, this journal. (done)
-Stage 1 — Scaffold Hydrogen. Get a storefront running locally.
-Stage 2 — Scaffold Sanity Studio. Create the project + Studio, decide
-where it lives relative to the Hydrogen app.
-Stage 3 — Wire them together. First real win: text typed in Studio shows
-up on the Hydrogen home page.
-Stage 4 — Portable Text + second page type. Rich content rendered through
-my own components; add the second page; handle Sanity images.
-Stage 5 (stretch) — Visual editing / live preview. Click-to-edit overlays
-if time allows, without risking the working core.
-Stage 6 — Polish. README, clean from-scratch run, rehearse the demo.
+- [x] **Stage 0 — Foundation.** Repo, Node check, this journal.
+- [x] **Stage 1 — Scaffold Hydrogen.** Get a storefront running locally.
+- [ ] **Stage 2 — Scaffold Sanity Studio.** Create the project + Studio, decide where it lives relative to the Hydrogen app.
+- [ ] **Stage 3 — Wire them together.** First real win: text typed in Studio shows up on the Hydrogen home page.
+- [ ] **Stage 4 — Portable Text + second page type.** Rich content rendered through my own components; add the second page; handle Sanity images.
+- [ ] **Stage 5 (stretch) — Visual editing / live preview.** Click-to-edit overlays if time allows, without risking the working core.
+- [ ] **Stage 6 — Polish.** README, clean from-scratch run, rehearse the demo.
 
-\*_Open Questions / Things to Resolve_
-Question 1: GraphQL vs GROQ for consumption. The brief mentions GraphQL on the Sanity side. First read of the official hydrogen-sanity toolkit suggests GROQ is the default/recommended path, with GraphQL also supported. Need to confirm the
-tradeoff and pick one deliberately. (revisit in Stage 3)
+---
 
-**Decision Log**
+## Open Questions / Things to Resolve
 
-Format: Decision — what I chose. Why — the reasoning. Tradeoff —
-what I gave up / when I'd choose differently.
+**Question 1 — GraphQL vs GROQ for consumption.** The brief mentions GraphQL on the Sanity side. First read of the official `hydrogen-sanity` toolkit suggests GROQ is the default/recommended path, with GraphQL also supported. Need to confirm the tradeoff and pick one deliberately. _(Revisit in Stage 3.)_
 
-Stage 1 — Scaffold Storefont
-Decision: When I merged the Hydrogen scaffold into my existing repo, the cp -R overwrote my repo .git with the scaffold's history, which dropped my remote and my Stage-0 commit. Rather than fight it, I kept the scaffolder's granular commits (they document the real build steps), re-pointed the remote at my Github repo, commited the journal on top, and forced pushed since the remote has no real history yet.
+---
 
-**Daily Log**
-[Jun 4] — Stage 0
+## Decision Log
+
+Format: **Decision** — what I chose. **Why** — the reasoning. **Tradeoff** — what I gave up / when I'd choose differently.
+
+### Stage 1 — Scaffold Storefront
+
+**Decision:** When I merged the Hydrogen scaffold into my existing repo, the `cp -R` overwrote my repo `.git` with the scaffold's history, which dropped my remote and my Stage-0 commit. Rather than fight it, I kept the scaffolder's granular commits (they document the real build steps), re-pointed the remote at my GitHub repo, committed the journal on top, and force-pushed since the remote has no real history yet.
+
+**Why:** The scaffolder's commits are a more honest record of the build than my single Stage-0 commit, and the remote had nothing worth preserving.
+
+**Tradeoff:** Force-pushing rewrites history — fine here because I'm the only contributor and the remote was effectively empty. I'd never do this on a shared branch with real history.
+
+### Stage 2 — Scaffold Sanity Studio
+
+1. Where does the studio live?
+   **Decision:** I decided to subfolder the studio inside my Hydrogen repo (a /studio folder).
+
+   **Why:** It keeps everything in one repo, but keep the two app as clean, independently-runnable projects(Hydrogen on :3000, Studio on :3333).
+
+2. What does a "Home Page" look like as structured data?
+   **Decision:** - A homePage document with a title and a section[] array
+   - heroSection - heading(string), subheading(string), background image, CTA(label + link). The classic top-of-page banner
+   - featuredCollection - a heading + a way to reference products. Hook to the Shopify side
+   - richTextSection - a Portable Text field.
+
+   **Why:** each section type becomes a matching React component in Hydrogen. Studio editor picks "add a Hero section," fill the field and Hydrogen renders the corresponding <HeroSection>. That one-to-one mapping between Sanity section types and React componenents is the core idea of editor-friendly headless content
+
+---
+
+## Daily Log
+
+### [Jun 4] — Stage 0
 
 Set up the public repo, confirmed Node v22.13.1, wrote this journal.
-Goal for next session: Scaffold Hydrogen. Get a storefront running locally.
 
-[Jun 4] - Stage 1
-Option A (simplest): Scaffold into a fresh folder, then move the generated files into your existing cloned repo. Keeps your repo as the single root.
+Goal for next session: scaffold Hydrogen, get a storefront running locally.
+
+### [Jun 4] — Stage 1
+
+Option A (simplest): scaffold into a fresh folder, then move the generated files into the existing cloned repo. Keeps the repo as the single root.
+
 **The runbook**
-cd ~  
+
+```bash
+cd ~
 npm create @shopify/hydrogen@latest
-Connect to Shopify? → Choose "Use sample data from Mock.shop (no login required).
-Styling? Tailwind,
-Language? → TypeScript
-Install dependencies? → Yes.
-Arrow down to "Set up later (run npx shopify hydrogen setup markets)" and hit enter.
+```
+
+Scaffolder prompts and my answers:
+
+- **Connect to Shopify?** → Use sample data from Mock.shop (no login required)
+- **Styling?** → Tailwind
+- **Language?** → TypeScript
+- **Install dependencies?** → Yes
+- **Markets?** → Set up later (`npx shopify hydrogen setup markets`)
+
 Declined multi-market setup — out of scope for this exercise; keeps the route structure simple and focused on the content integration. Would revisit if the brief involved international expansion.
 
+```bash
 cd hydrogen-temp && npm run dev
 cp -R . ../hydrogen-sanity-homepage/
 cd ../hydrogen-sanity-homepage
+```
 
-Stage 1 done: Hydrogen running on Mock.shop, pushed. Next: scaffold Sanity Studio (Stage 2), decide embedded-in-repo vs separate folder
+**Stage 1 done:** Hydrogen running on Mock.shop, pushed. Next: scaffold Sanity Studio (Stage 2), decide embedded-in-repo vs separate folder.
+
+### [Jun 5] — Stage 2
+
+**The runbook**
+
+```bash
+cd ~/hydrogen-sanity-homepage
+npm create sanity@latest -- --template clean --typescript --output-path studio
+```
+
+Scaffolder prompts and my answers:
+
+- **Login / create account?** → Google
+- **Create a new project** → luxome-homepage
+- **Language?** → TypeScript
+- **Package manager** → npm
+- **Configure Sanity MCP and install agent skills for these editors?** → skip all
+
+```bash
+cd /studio && npm run dev
+```
+
+**Note** ProjectId which is later for Hydrogen side is in /studio/sanity.config.ts
