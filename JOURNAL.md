@@ -41,7 +41,8 @@ tradeoff and pick one deliberately. (revisit in Stage 3)
 Format: Decision — what I chose. Why — the reasoning. Tradeoff —
 what I gave up / when I'd choose differently.
 
-Stage 0 — Foundation
+Stage 1 — Scaffold Storefont
+Decision: When I merged the Hydrogen scaffold into my existing repo, the cp -R overwrote my repo .git with the scaffold's history, which dropped my remote and my Stage-0 commit. Rather than fight it, I kept the scaffolder's granular commits (they document the real build steps), re-pointed the remote at my Github repo, commited the journal on top, and forced pushed since the remote has no real history yet.
 
 **Daily Log**
 [Jun 4] — Stage 0
@@ -58,4 +59,11 @@ Connect to Shopify? → Choose "Use sample data from Mock.shop (no login require
 Styling? Tailwind,
 Language? → TypeScript
 Install dependencies? → Yes.
+Arrow down to "Set up later (run npx shopify hydrogen setup markets)" and hit enter.
 Declined multi-market setup — out of scope for this exercise; keeps the route structure simple and focused on the content integration. Would revisit if the brief involved international expansion.
+
+cd hydrogen-temp && npm run dev
+cp -R . ../hydrogen-sanity-homepage/
+cd ../hydrogen-sanity-homepage
+
+Stage 1 done: Hydrogen running on Mock.shop, pushed. Next: scaffold Sanity Studio (Stage 2), decide embedded-in-repo vs separate folder
