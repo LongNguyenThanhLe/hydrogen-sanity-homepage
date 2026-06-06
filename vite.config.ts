@@ -3,9 +3,10 @@ import {hydrogen} from '@shopify/hydrogen/vite';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {reactRouter} from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
+import {sanity} from 'hydrogen-sanity/vite';
 
 export default defineConfig({
-  plugins: [tailwindcss(), hydrogen(), oxygen(), reactRouter()],
+  plugins: [tailwindcss(), hydrogen(), sanity(), oxygen(), reactRouter()],
   resolve: {
     tsconfigPaths: true,
   },

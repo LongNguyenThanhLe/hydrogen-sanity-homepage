@@ -5,3 +5,10 @@
 
 // Enhance TypeScript's built-in typings.
 import '@total-typescript/ts-reset';
+
+declare global {
+  interface Env {
+    PUBLIC_SANITY_PROJECT_ID: string;
+    PUBLIC_SANITY_DATASET: string;
+  }
+}

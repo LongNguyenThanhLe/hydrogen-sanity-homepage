@@ -32,8 +32,8 @@ A rough build order. Expect this to change — I'll note it when it does.
 
 - [x] **Stage 0 — Foundation.** Repo, Node check, this journal.
 - [x] **Stage 1 — Scaffold Hydrogen.** Get a storefront running locally.
-- [ ] **Stage 2 — Scaffold Sanity Studio.** Create the project + Studio, decide where it lives relative to the Hydrogen app.
-- [ ] **Stage 3 — Wire them together.** First real win: text typed in Studio shows up on the Hydrogen home page.
+- [x] **Stage 2 — Scaffold Sanity Studio.** Create the project + Studio, decide where it lives relative to the Hydrogen app.
+- [x] **Stage 3 — Wire them together.** First real win: text typed in Studio shows up on the Hydrogen home page.
 - [ ] **Stage 4 — Portable Text + second page type.** Rich content rendered through my own components; add the second page; handle Sanity images.
 - [ ] **Stage 5 (stretch) — Visual editing / live preview.** Click-to-edit overlays if time allows, without risking the working core.
 - [ ] **Stage 6 — Polish.** README, clean from-scratch run, rehearse the demo.
@@ -43,6 +43,11 @@ A rough build order. Expect this to change — I'll note it when it does.
 ## Open Questions / Things to Resolve
 
 **Question 1 — GraphQL vs GROQ for consumption.** The brief mentions GraphQL on the Sanity side. First read of the official `hydrogen-sanity` toolkit suggests GROQ is the default/recommended path, with GraphQL also supported. Need to confirm the tradeoff and pick one deliberately. _(Revisit in Stage 3.)_
+
+-> Decision: Choose GraphQl.
+-> Confirm tradeoff: GROQ is Sanity's native and official recommended query language - more flexible, works without a schema-deploy step, supports real-time/listening(which GraphQL subscriptions dont)
+-> Reason: The Shopify Storefront API speaks GraphQL by design, so using GraphQL for Sanity too means both data sources in my Hydrogen loaders share one query language and one mental model, rather than context-switching between GraphQl and GROQ mid-loader
+-> Tradeoffs I'm accepting: the schema-deploy step on the Sanity side, and the loss of GROQ-based real-time subscriptions—acceptable here because the content is straightforward and live editorial subscriptions aren't a requirement for this build
 
 ---
 
@@ -72,6 +77,13 @@ Format: **Decision** — what I chose. **Why** — the reasoning. **Tradeoff** �
    - richTextSection - a Portable Text field.
 
    **Why:** each section type becomes a matching React component in Hydrogen. Studio editor picks "add a Hero section," fill the field and Hydrogen renders the corresponding <HeroSection>. That one-to-one mapping between Sanity section types and React componenents is the core idea of editor-friendly headless content
+
+### Stage 3 — Wire them together
+
+1. Model the home page as a section[] array of typed blocks(hero/ richText / featuredProduct) rather than fixed fields, so editor compose pages freely
+2. the page document resuses the same section types -> about page is build from the same section types
+3. featuredProducts stores Shopify handles, not product data - Sanity owns the editorial choice, Hydrogen fetches live commerce data from the Storefront API
+4. Hit a version mismatch wiring hydrogen-sanity. The first setup example I found used a synchronous createSanityContext with a loadQuery pattern. Checked the installed version against the MIGRATE-v4-to-v5 doc and found v5 made createSanityContext async and changed its args to {request, cache, client} (no more waitUntil). Updated the factory to async and used Awaited<ReturnType<...>> for the context type.
 
 ---
 
@@ -134,3 +146,50 @@ cd /studio && npm run dev
 ```
 
 **Note** ProjectId which is later for Hydrogen side is in /studio/sanity.config.ts
+
+### [Jun 6] — Stage 3
+
+**Plan**
+
+1. Write Schema in Studio(hero/featured/richText sections + homePage doc), create content, see it in Studio.
+
+- heroSection.ts:
+- richTextSection.ts: Portable text live
+- homePage.ts: compose section(Hydrogen will query "the home page." Don't make several - harden)
+- page.ts: second page - my choice(About page)
+- index.ts: register them all
+
+2. Install + wire hydrogen-sanity into the Hydrogen app(Vite plugin + context)
+
+```bash
+cd ~/hydrogen-sanity-homepage
+npm install hydrogen-sanity @sanity/client
+```
+
+3. Set the env vars(projectId, dataset) on the Hydrogen side.
+   Edit 1 — Add Sanity env vars to .env
+
+```bash
+grep projectId studio/sanity.config.ts
+PUBLIC_SANITY_PROJECT_ID="YOUR_PROJECT_ID"
+PUBLIC_SANITY_DATASET="production"
+```
+
+Edit 2 — Tell TypeScript about the new env vars
+env.d.ts — the declare global augmentation above
+
+Edit 3 — vite.config.ts, add the sanity plugin. Add this import near the other plugin imports:
+
+```bash
+import {sanity} from 'hydrogen-sanity/vite';
+```
+
+add sanity() to the plugins array, right after hydrogen()
+
+Edit 4 — app/lib/sanity.ts
+app/lib/sanity.ts — create with the corrected async factory
+
+Edit 5 — app/lib/context.ts
+app/lib/context.ts — import, type change, async build + pass {sanity}
+
+4. Query in loader + render - expect: text from studio appears on Hydrogen home page.
