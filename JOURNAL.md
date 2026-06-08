@@ -44,10 +44,7 @@ A rough build order. Expect this to change — I'll note it when it does.
 
 **Question 1 — GraphQL vs GROQ for consumption.** The brief mentions GraphQL on the Sanity side. First read of the official `hydrogen-sanity` toolkit suggests GROQ is the default/recommended path, with GraphQL also supported. Need to confirm the tradeoff and pick one deliberately. _(Revisit in Stage 3.)_
 
--> Decision: Choose GraphQl.
--> Confirm tradeoff: GROQ is Sanity's native and official recommended query language - more flexible, works without a schema-deploy step, supports real-time/listening(which GraphQL subscriptions dont)
--> Reason: The Shopify Storefront API speaks GraphQL by design, so using GraphQL for Sanity too means both data sources in my Hydrogen loaders share one query language and one mental model, rather than context-switching between GraphQl and GROQ mid-loader
--> Tradeoffs I'm accepting: the schema-deploy step on the Sanity side, and the loss of GROQ-based real-time subscriptions—acceptable here because the content is straightforward and live editorial subscriptions aren't a requirement for this build
+-> Decision: I evaluated GraphQL vs GROQ, and chose GROQ because it's what the official toolkit is built around — its caching and preview integration all assume it, so GraphQL would mean fighting the tooling for no gain on content this simple
 
 ---
 
@@ -193,3 +190,97 @@ Edit 5 — app/lib/context.ts
 app/lib/context.ts — import, type change, async build + pass {sanity}
 
 4. Query in loader + render - expect: text from studio appears on Hydrogen home page.
+
+Edit 1: Add the GROQ query constant
+
+```bash
+const HOME_QUERY = `*[_type == "homePage"][0]{
+  title,
+  sections[]{
+    _type,
+    _key,
+    heading,
+    subheading,
+    ctaLabel,
+    ctaHref,
+    body,
+    productHandles
+  }
+}`;
+```
+
+Edit 2 — Fetch it in loadCriticalData
+
+```bash
+async function loadCriticalData({context}: Route.LoaderArgs) {
+  const [{collections}, home] = await Promise.all([
+    context.storefront.query(FEATURED_COLLECTION_QUERY),
+    context.sanity.query(HOME_QUERY),
+    // Add other queries here, so that they are loaded in parallel
+  ]);
+
+  return {
+    isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
+    featuredCollection: collections.nodes[0],
+    home,
+  };
+}
+```
+
+Edit 3 — Render the sections in the component
+
+```bash
+export default function Homepage() {
+  const data = useLoaderData<typeof loader>();
+  return (
+    <div className="home">
+      {data.isShopLinked ? null : <MockShopNotice />}
+      <HomeSections home={data.home} />
+      <FeaturedCollection collection={data.featuredCollection} />
+      <RecommendedProducts products={data.recommendedProducts} />
+    </div>
+  );
+}
+
+function HomeSections({home}: {home: any}) {
+  if (!home?.sections?.length) {
+    return <p>No home page content found in Sanity.</p>;
+  }
+  return (
+    <div className="home-sections">
+      {home.sections.map((section: any) => {
+        switch (section._type) {
+          case 'heroSection':
+            return (
+              <section key={section._key} className="section-hero">
+                <h1>{section.heading}</h1>
+                {section.subheading ? <p>{section.subheading}</p> : null}
+                {section.ctaLabel ? (
+                  <Link to={section.ctaHref || '#'}>{section.ctaLabel}</Link>
+                ) : null}
+              </section>
+            );
+          case 'richTextSection':
+            return (
+              <section key={section._key} className="section-richtext">
+                {section.heading ? <h2>{section.heading}</h2> : null}
+                <p>[Portable Text renders in the next step]</p>
+              </section>
+            );
+          case 'featuredProductsSection':
+            return (
+              <section key={section._key} className="section-featured">
+                {section.heading ? <h2>{section.heading}</h2> : null}
+                <p>Handles: {(section.productHandles || []).join(', ')}</p>
+              </section>
+            );
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
+}
+```
+
+### [Jun 6] — Stage 4

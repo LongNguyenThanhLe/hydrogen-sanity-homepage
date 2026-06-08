@@ -28,14 +28,16 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}] = await Promise.all([
+  const [{collections}, home] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
+    context.sanity.fetch(HOME_QUERY),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
     featuredCollection: collections.nodes[0],
+    home,
   };
 }
 
@@ -63,8 +65,49 @@ export default function Homepage() {
   return (
     <div className="home">
       {data.isShopLinked ? null : <MockShopNotice />}
+      <HomeSections home={data.home} />
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
+    </div>
+  );
+}
+
+function HomeSections({home}: {home: any}) {
+  if (!home?.sections?.length) {
+    return <p>No home page content found in Sanity.</p>;
+  }
+  return (
+    <div className="home-sections">
+      {home.sections.map((section: any) => {
+        switch (section._type) {
+          case 'heroSection':
+            return (
+              <section key={section._key} className="section-hero">
+                <h1>{section.heading}</h1>
+                {section.subheading ? <p>{section.subheading}</p> : null}
+                {section.ctaLabel ? (
+                  <Link to={section.ctaHref || '#'}>{section.ctaLabel}</Link>
+                ) : null}
+              </section>
+            );
+          case 'richTextSection':
+            return (
+              <section key={section._key} className="section-richtext">
+                {section.heading ? <h2>{section.heading}</h2> : null}
+                <p>[Portable Text renders in the next step]</p>
+              </section>
+            );
+          case 'featuredProductsSection':
+            return (
+              <section key={section._key} className="section-featured">
+                {section.heading ? <h2>{section.heading}</h2> : null}
+                <p>Handles: {(section.productHandles || []).join(', ')}</p>
+              </section>
+            );
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }
@@ -175,3 +218,17 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
     }
   }
 ` as const;
+
+const HOME_QUERY = `*[_type == "homePage"][0]{
+  title,
+  sections[]{
+    _type,
+    _key,
+    heading,
+    subheading,
+    ctaLabel,
+    ctaHref,
+    body,
+    productHandles
+  }
+}`;
