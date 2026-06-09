@@ -2,8 +2,8 @@ import {Await, useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/_index';
 import {Suspense} from 'react';
 import {Image} from '@shopify/hydrogen';
-import {PortableTextRenderer} from '~/components/PortableTextRenderer';
 import {SectionRenderer} from '~/components/SectionRenderer';
+import {CacheNone} from '@shopify/hydrogen';
 
 import type {
   FeaturedCollectionFragment,
@@ -33,7 +33,7 @@ export async function loader(args: Route.LoaderArgs) {
 async function loadCriticalData({context}: Route.LoaderArgs) {
   const [{collections}, home] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
-    context.sanity.fetch(HOME_QUERY),
+    context.sanity.query(HOME_QUERY, {}, {hydrogen: {cache: CacheNone()}}),
     // Add other queries here, so that they are loaded in parallel
   ]);
 

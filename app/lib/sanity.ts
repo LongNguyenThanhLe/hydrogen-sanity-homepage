@@ -20,7 +20,7 @@ export async function createSanityClient(
       projectId: env.PUBLIC_SANITY_PROJECT_ID,
       dataset: env.PUBLIC_SANITY_DATASET,
       apiVersion: '2024-01-01',
-      useCdn: true,
+      useCdn: false,
     },
   });
 }

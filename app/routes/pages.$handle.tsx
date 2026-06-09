@@ -1,6 +1,7 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {SectionRenderer} from '~/components/SectionRenderer';
+import {CacheNone} from '@shopify/hydrogen';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [
@@ -23,7 +24,11 @@ async function loadCriticalData({context, params}: Route.LoaderArgs) {
     throw new Error('Missing page handle');
   }
 
-  const page = await context.sanity.query(PAGE_QUERY, {slug: params.handle});
+  const page = await context.sanity.query(
+    PAGE_QUERY,
+    {slug: params.handle},
+    {hydrogen: {cache: CacheNone()}},
+  );
 
   if (!page) {
     throw new Response('Not Found', {status: 404});
