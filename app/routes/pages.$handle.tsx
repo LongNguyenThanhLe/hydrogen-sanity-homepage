@@ -56,6 +56,7 @@ const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{
     ctaLabel,
     ctaHref,
     body,
-    productHandles
+    productHandles,
+    backgroundImage
   }
 }`;

@@ -1,14 +1,11 @@
 import {Link} from 'react-router';
+import {urlForImage} from '~/lib/image';
 import {PortableTextRenderer} from '~/components/PortableTextRenderer';
 
 /**
- * Renders an array of Sanity page sections.
- *
- * This is the single source of truth for the section-type -> component mapping,
- * shared by every route that renders Sanity page content (home page, dynamic
- * pages). Adding a new section type means adding one case here, and every page
- * picks it up. Previously this switch was duplicated per route — consolidated
- * so the two can't drift apart.
+ * Renders an array of Sanity page sections. Single source of truth for the
+ * section-type -> component mapping, shared by every route rendering Sanity
+ * page content (home + dynamic pages).
  */
 
 type Section = {
@@ -20,11 +17,37 @@ type Section = {
   ctaHref?: string;
   body?: any;
   productHandles?: string[];
+  backgroundImage?: any;
 };
 
 function HeroSection({section}: {section: Section}) {
+  // useImageUrl builds an optimized CDN URL from the Sanity image reference.
+  // We request a fixed width and auto format so the CDN serves an appropriately
+  // sized, modern-format image rather than the original upload. Hotspot/crop
+  // chosen by the editor are respected automatically.
+  const bgUrl = section.backgroundImage
+    ? urlForImage(section.backgroundImage).width(1600).auto('format').url()
+    : null;
+
   return (
-    <section className="section-hero">
+    <section
+      className="section-hero"
+      style={
+        bgUrl
+          ? {
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${bgUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              color: 'white',
+              padding: '4rem 2rem',
+              minHeight: '60vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }
+          : undefined
+      }
+    >
       <h2>{section.heading}</h2>
       {section.subheading ? <p>{section.subheading}</p> : null}
       {section.ctaLabel ? (

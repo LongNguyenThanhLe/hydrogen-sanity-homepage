@@ -192,6 +192,7 @@ const HOME_QUERY = `*[_type == "homePage"][0]{
     ctaLabel,
     ctaHref,
     body,
-    productHandles
+    productHandles,
+    backgroundImage
   }
 }`;

@@ -493,16 +493,13 @@ const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{
 
 ```bash
 import {Link} from 'react-router';
+import {useImageUrl} from 'hydrogen-sanity';
 import {PortableTextRenderer} from '~/components/PortableTextRenderer';
 
 /**
- * Renders an array of Sanity page sections.
- *
- * This is the single source of truth for the section-type -> component mapping,
- * shared by every route that renders Sanity page content (home page, dynamic
- * pages). Adding a new section type means adding one case here, and every page
- * picks it up. Previously this switch was duplicated per route — consolidated
- * so the two can't drift apart.
+ * Renders an array of Sanity page sections. Single source of truth for the
+ * section-type -> component mapping, shared by every route rendering Sanity
+ * page content (home + dynamic pages).
  */
 
 type Section = {
@@ -514,11 +511,33 @@ type Section = {
   ctaHref?: string;
   body?: any;
   productHandles?: string[];
+  backgroundImage?: any;
 };
 
 function HeroSection({section}: {section: Section}) {
+  // useImageUrl builds an optimized CDN URL from the Sanity image reference.
+  // We request a fixed width and auto format so the CDN serves an appropriately
+  // sized, modern-format image rather than the original upload. Hotspot/crop
+  // chosen by the editor are respected automatically.
+  const bgUrl = section.backgroundImage
+    ? useImageUrl(section.backgroundImage).width(1600).auto('format').url()
+    : null;
+
   return (
-    <section className="section-hero">
+    <section
+      className="section-hero"
+      style={
+        bgUrl
+          ? {
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${bgUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              color: 'white',
+              padding: '4rem 2rem',
+            }
+          : undefined
+      }
+    >
       <h2>{section.heading}</h2>
       {section.subheading ? <p>{section.subheading}</p> : null}
       {section.ctaLabel ? (
@@ -602,3 +621,10 @@ import {SectionRenderer} from '~/components/SectionRenderer';
 ```bash
 <SectionRenderer sections={page.sections} />
 ```
+
+Note: Extracted the duplicated section switch (it was copy-pasted across the home and dynamic-page routes) into a single SectionRenderer, with each section type as its own component. Single source of truth for the type→component mapping — adding a section type is now a one-file change. Verified both pages render identically after; pure refactor, no behavior change.
+
+**Getting image background work**
+Added Sanity image rendering. First tried the toolkit's useImageUrl hook — it threw "Failed to find a Sanity provider," because the hook needs a SanityProvider React context I hadn't set up (it's geared toward the visual-editing path). Rather than add that coupling just for image URLs, switched to the standalone @sanity/image-url builder — a plain function, no provider. Then the image rendered as a grey band; inspecting the generated URL showed cdn.sanity.io/images/undefined/undefined/... — import.meta.env.PUBLIC*SANITY*\* resolves to undefined in the Oxygen server context, so the builder got no projectId. Fixed by sourcing projectId/dataset directly in the helper. Safe since these aren't secrets (public dataset), though the cleaner pattern would thread them from the server env — noted as a refactor.
+
+The hero image rendered as a grey box. The URL was valid (loaded fine in a standalone tab) and the CSS was correct, but the Network tab showed the request as "blocked." Root cause: Hydrogen ships a strict Content-Security-Policy, and cdn.sanity.io wasn't in the img-src allowlist — so the browser refused to load it inside the app even though the URL was fine. Added Sanity's CDN to the CSP imgSrc directive. This is a real headless-commerce integration concern: when you pull assets from a second platform (Sanity) into a Hydrogen storefront, you have to explicitly trust that origin in the CSP. Worth knowing it applies to more than images — fonts, scripts, and connect-src for the Sanity API would need the same treatment in a fuller build.
