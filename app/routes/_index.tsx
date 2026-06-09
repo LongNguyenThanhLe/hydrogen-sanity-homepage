@@ -2,6 +2,8 @@ import {Await, useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/_index';
 import {Suspense} from 'react';
 import {Image} from '@shopify/hydrogen';
+import {PortableTextRenderer} from '~/components/PortableTextRenderer';
+
 import type {
   FeaturedCollectionFragment,
   RecommendedProductsQuery,
@@ -94,7 +96,7 @@ function HomeSections({home}: {home: any}) {
             return (
               <section key={section._key} className="section-richtext">
                 {section.heading ? <h2>{section.heading}</h2> : null}
-                <p>[Portable Text renders in the next step]</p>
+                <PortableTextRenderer value={section.body} />
               </section>
             );
           case 'featuredProductsSection':
