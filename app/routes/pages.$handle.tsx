@@ -1,6 +1,6 @@
-import {useLoaderData, Link} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
-import {PortableTextRenderer} from '~/components/PortableTextRenderer';
+import {SectionRenderer} from '~/components/SectionRenderer';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [
@@ -40,47 +40,7 @@ export default function Page() {
       <header>
         <h1>{page.title}</h1>
       </header>
-      <PageSections sections={page.sections} />
-    </div>
-  );
-}
-
-function PageSections({sections}: {sections: any}) {
-  if (!sections?.length) {
-    return <p>This page has no content yet.</p>;
-  }
-  return (
-    <div className="page-sections">
-      {sections.map((section: any) => {
-        switch (section._type) {
-          case 'heroSection':
-            return (
-              <section key={section._key} className="section-hero">
-                <h2>{section.heading}</h2>
-                {section.subheading ? <p>{section.subheading}</p> : null}
-                {section.ctaLabel ? (
-                  <Link to={section.ctaHref || '#'}>{section.ctaLabel}</Link>
-                ) : null}
-              </section>
-            );
-          case 'richTextSection':
-            return (
-              <section key={section._key} className="section-richtext">
-                {section.heading ? <h2>{section.heading}</h2> : null}
-                <PortableTextRenderer value={section.body} />
-              </section>
-            );
-          case 'featuredProductsSection':
-            return (
-              <section key={section._key} className="section-featured">
-                {section.heading ? <h2>{section.heading}</h2> : null}
-                <p>Handles: {(section.productHandles || []).join(', ')}</p>
-              </section>
-            );
-          default:
-            return null;
-        }
-      })}
+      <SectionRenderer sections={page.sections} />
     </div>
   );
 }

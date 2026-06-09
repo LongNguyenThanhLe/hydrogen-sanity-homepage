@@ -3,6 +3,7 @@ import type {Route} from './+types/_index';
 import {Suspense} from 'react';
 import {Image} from '@shopify/hydrogen';
 import {PortableTextRenderer} from '~/components/PortableTextRenderer';
+import {SectionRenderer} from '~/components/SectionRenderer';
 
 import type {
   FeaturedCollectionFragment,
@@ -67,49 +68,9 @@ export default function Homepage() {
   return (
     <div className="home">
       {data.isShopLinked ? null : <MockShopNotice />}
-      <HomeSections home={data.home} />
+      <SectionRenderer sections={data.home?.sections} />
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
-    </div>
-  );
-}
-
-function HomeSections({home}: {home: any}) {
-  if (!home?.sections?.length) {
-    return <p>No home page content found in Sanity.</p>;
-  }
-  return (
-    <div className="home-sections">
-      {home.sections.map((section: any) => {
-        switch (section._type) {
-          case 'heroSection':
-            return (
-              <section key={section._key} className="section-hero">
-                <h1>{section.heading}</h1>
-                {section.subheading ? <p>{section.subheading}</p> : null}
-                {section.ctaLabel ? (
-                  <Link to={section.ctaHref || '#'}>{section.ctaLabel}</Link>
-                ) : null}
-              </section>
-            );
-          case 'richTextSection':
-            return (
-              <section key={section._key} className="section-richtext">
-                {section.heading ? <h2>{section.heading}</h2> : null}
-                <PortableTextRenderer value={section.body} />
-              </section>
-            );
-          case 'featuredProductsSection':
-            return (
-              <section key={section._key} className="section-featured">
-                {section.heading ? <h2>{section.heading}</h2> : null}
-                <p>Handles: {(section.productHandles || []).join(', ')}</p>
-              </section>
-            );
-          default:
-            return null;
-        }
-      })}
     </div>
   );
 }
