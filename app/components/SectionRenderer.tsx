@@ -51,7 +51,23 @@ function HeroSection({section}: {section: Section}) {
       <h2>{section.heading}</h2>
       {section.subheading ? <p>{section.subheading}</p> : null}
       {section.ctaLabel ? (
-        <Link to={section.ctaHref || '#'}>{section.ctaLabel}</Link>
+        <Link
+          to={section.ctaHref || '#'}
+          style={{
+            display: 'inline-block',
+            marginTop: '1rem',
+            padding: '0.75rem 1.5rem',
+            background: 'transparent',
+            border: '1px solid white',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '4px',
+            fontWeight: 600,
+            width: 'fit-content',
+          }}
+        >
+          {section.ctaLabel}
+        </Link>
       ) : null}
     </section>
   );
